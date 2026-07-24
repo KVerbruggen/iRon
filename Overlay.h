@@ -71,6 +71,7 @@ class Overlay
         virtual void    onConfigChanged();
         virtual void    onSessionChanged();
         virtual float2  getDefaultSize();
+        virtual bool    hasDynamicWidth();
         virtual bool    hasCustomBackground();
 
         std::string     m_name;

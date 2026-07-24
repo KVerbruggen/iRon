@@ -269,7 +269,7 @@ void Overlay::configChanged()
     // Position/dimensions might have changed
     const int x = g_cfg.getInt(m_name,"window_pos_x", defaultX);
     const int y = g_cfg.getInt(m_name,"window_pos_y", defaultY);
-    const int w = g_cfg.getInt(m_name,"window_size_x", (int)defaultSize.x);
+    const int w = hasDynamicWidth() ? (int)defaultSize.x : g_cfg.getInt(m_name,"window_size_x", (int)defaultSize.x);
     const int h = g_cfg.getInt(m_name,"window_size_y", (int)defaultSize.y);
     setWindowPosAndSize( x, y, w, h );
 
@@ -373,7 +373,8 @@ void Overlay::saveWindowPosAndSize()
 {
     g_cfg.setInt( m_name, "window_pos_x", m_xpos );
     g_cfg.setInt( m_name, "window_pos_y", m_ypos );
-    g_cfg.setInt( m_name, "window_size_x", m_width );
+    if( !hasDynamicWidth() )
+        g_cfg.setInt( m_name, "window_size_x", m_width );
     g_cfg.setInt( m_name, "window_size_y", m_height  );
 
     g_cfg.save();
@@ -395,5 +396,6 @@ void Overlay::onUpdate() {}
 void Overlay::onConfigChanged() {}
 void Overlay::onSessionChanged() {}
 float2 Overlay::getDefaultSize() { return float2(400,300); }
+bool Overlay::hasDynamicWidth() { return false; }
 bool Overlay::hasCustomBackground() { return false; }
 

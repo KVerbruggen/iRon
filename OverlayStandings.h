@@ -132,6 +132,11 @@ protected:
             m_columns.add( (int)Columns::L5,     computeTextExtent(L"99.99.999", m_dwriteFactory.Get(), m_textFormat.Get()).x, fontSize / 2 );
     }
 
+    virtual bool hasDynamicWidth()
+    {
+        return true;
+    }
+
     virtual void onUpdate()
     {
 
@@ -322,6 +327,19 @@ protected:
 
         const float xoff = 10.0f;
         const float yoff = 10;
+        const float maxDriverColumnWidth = g_cfg.getFloat( m_name, "name_col_max_width", 500.0f );
+        float nameWidth = computeTextExtent( L"Driver", m_dwriteFactory.Get(), m_textFormat.Get() ).x;
+        for( const CarInfo& ci : carInfo )
+        {
+            if( ci.classId == selfClass )
+                nameWidth = max( nameWidth, computeTextExtent( toWide(g_ir_session->cars[ci.carIdx].teamName).c_str(), m_dwriteFactory.Get(), m_textFormat.Get() ).x );
+        }
+        nameWidth = min( nameWidth, maxDriverColumnWidth );
+
+        const int requiredWidth = (int)ceil( m_columns.minimumWidth() + nameWidth + 2*xoff );
+        if( requiredWidth != m_width )
+            setWindowPosAndSize( m_xpos, m_ypos, requiredWidth, m_height );
+
         m_columns.layout( (float)m_width - 2*xoff );
         float y = yoff + lineHeight/2;
         const float ybottom = m_height - lineHeight * 1.5f;

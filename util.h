@@ -155,6 +155,14 @@ class ColumnLayout
             add( id, textWidth, border, border );
         }
 
+        float minimumWidth() const
+        {
+            float width = 0;
+            for( const Column& clm : m_columns )
+                width += (clm.autoWidth ? 0 : clm.textWidth) + clm.borderL + clm.borderR;
+            return width;
+        }
+
         void layout( float totalWidth )
         {
             int autoWidthCnt = 0;
