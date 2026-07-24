@@ -491,8 +491,9 @@ protected:
             // Dim color if player is disconnected.
             // TODO: this isn't 100% accurate, I think, because a car might be "not in world" while the player
             // is still connected? I haven't been able to find a better way to do this, though.
+            const bool carIsFocused = ir_CamCarIdx.getInt() == ci.carIdx;
             const bool isGone = !car.isSelf && ir_CarIdxTrackSurface.getInt(ci.carIdx) == irsdk_NotInWorld;
-            float4 textCol = car.isSelf ? selfCol : (car.isBuddy ? buddyCol : (car.isFlagged?flaggedCol:otherCarCol));
+            float4 textCol = carIsFocused ? selfCol : (car.isBuddy ? buddyCol : (car.isFlagged ? flaggedCol : otherCarCol));
             if( isGone )
                 textCol.a *= 0.5f;
 
