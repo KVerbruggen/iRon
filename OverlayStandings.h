@@ -355,11 +355,11 @@ protected:
 
         // Headers
         clm = m_columns.get( (int)Columns::POSITION );
-        swprintf( s, _countof(s), L"Pos." );
+        swprintf( s, _countof(s), L"Pos" );
         m_text.render( m_renderTarget.Get(), s, m_textFormat.Get(), xoff+clm->textL, xoff+clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_CENTER );
 
         clm = m_columns.get( (int)Columns::CAR_NUMBER );
-        swprintf( s, _countof(s), L"No." );
+        swprintf( s, _countof(s), L"No" );
         m_text.render( m_renderTarget.Get(), s, m_textFormat.Get(), xoff+clm->textL, xoff+clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_CENTER );
 
         clm = m_columns.get( (int)Columns::NAME );
@@ -502,7 +502,7 @@ protected:
             {
                 clm = m_columns.get( (int)Columns::POSITION );
                 m_brush->SetColor( textCol );
-                swprintf( s, _countof(s), L"P%d", ci.position );
+                swprintf( s, _countof(s), L"%d", ci.position );
                 m_text.render( m_renderTarget.Get(), s, m_textFormat.Get(), xoff+clm->textL, xoff+clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_TRAILING );
             }
 
