@@ -161,6 +161,9 @@ std::string Config::getString( const std::string& component, const std::string& 
     if( !existed )
         value.set<std::string>( defaultVal );
 
+    if( value.is<picojson::null>() )
+        return defaultVal;
+
     return value.get<std::string>();
 }
 

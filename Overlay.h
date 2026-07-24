@@ -73,6 +73,7 @@ class Overlay
         virtual float2  getDefaultSize();
         virtual bool    hasDynamicWidth();
         virtual bool    hasCustomBackground();
+        virtual bool    isVisible();
 
         std::string     m_name;
         HWND            m_hwnd = 0;

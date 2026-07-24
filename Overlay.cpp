@@ -286,6 +286,15 @@ void Overlay::update()
     if( !m_enabled )
         return;
 
+    if( !isVisible() )
+    {
+        m_renderTarget->BeginDraw();
+        m_renderTarget->Clear( float4(0,0,0,0) );
+        m_renderTarget->EndDraw();
+        HRCHECK(m_swapChain->Present( 1, 0 ));
+        return;
+    }
+
     const float w = (float)m_width;
     const float h = (float)m_height;
     const float cornerRadius = g_cfg.getFloat( m_name, "corner_radius", m_name=="OverlayInputs"?2.0f:6.0f );
@@ -398,4 +407,5 @@ void Overlay::onSessionChanged() {}
 float2 Overlay::getDefaultSize() { return float2(400,300); }
 bool Overlay::hasDynamicWidth() { return false; }
 bool Overlay::hasCustomBackground() { return false; }
+bool Overlay::isVisible() { return true; }
 

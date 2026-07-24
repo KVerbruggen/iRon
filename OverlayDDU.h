@@ -66,6 +66,11 @@ class OverlayDDU : public Overlay
             return float2(809,166);
         }
 
+        virtual bool isVisible()
+        {
+            return ir_CamCarIdx.getInt() == g_ir_session->driverCarIdx;
+        }
+
         virtual void onEnable()
         {
             onConfigChanged();
@@ -249,7 +254,10 @@ class OverlayDDU : public Overlay
 
             const int  carIdx   = g_ir_session->driverCarIdx;
             const int selfClassId = ir_getClassId(carIdx);
-            const bool imperial = ir_DisplayUnits.getInt() == 0;
+            const std::string displayUnitsOverride = g_cfg.getString(m_name, "display_units_override", "");
+            const bool imperial = displayUnitsOverride == "imperial" ? true :
+                                  displayUnitsOverride == "metric" ? false :
+                                  ir_DisplayUnits.getInt() == 0;
 
             const DWORD tickCount = GetTickCount();
 

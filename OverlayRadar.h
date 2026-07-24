@@ -55,6 +55,11 @@ protected:
 
     }
 
+    virtual bool isVisible()
+    {
+        return ir_CamCarIdx.getInt() == g_ir_session->driverCarIdx;
+    }
+
     virtual void onUpdate()
     {
         const float w = (float)m_width;
