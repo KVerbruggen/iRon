@@ -29,7 +29,7 @@ SOFTWARE.
 #include "Config.h"
 #include "OverlayDebug.h"
 
-static struct CarInfo {
+struct CarInfo {
     int     carIdx = 0;
     float   deltaMts = 0;
     int     carID = 0;

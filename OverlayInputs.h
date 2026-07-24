@@ -99,7 +99,7 @@ class OverlayInputs : public Overlay
 
                 for( int i=0; i<(int)m_clutchVtx.size()-1; ++i )
                     m_clutchVtx[i].y = m_clutchVtx[i+1].y;
-                m_clutchVtx[(int)m_clutchVtx.size()-1].y = 1.0 - ir_Clutch.getFloat();
+                m_clutchVtx[(int)m_clutchVtx.size()-1].y = 1.0f - ir_Clutch.getFloat();
 
                 for( int i=0; i<(int)m_steerVtx.size()-1; ++i )
                     m_steerVtx[i].y = m_steerVtx[i+1].y;

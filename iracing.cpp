@@ -402,7 +402,7 @@ void updateSessionStringData(const char* sessionYaml, Session* ir_session_pointe
     parseYamlInt(sessionYaml, "WeekendInfo:WeekendOptions:NumCarClasses:", &ir_session_pointer->numCarClasses);
 
 
-    std:string simMode;
+    std::string simMode;
     parseYamlStr(sessionYaml, "WeekendInfo:SimMode:", simMode);
     ir_session_pointer->isReplay = (simMode == "replay");
     
@@ -825,7 +825,9 @@ float ir_getLapsRemaining() {
     double sessionTime = ir_SessionTimeRemain.getDouble();
 
     const bool   sessionIsTimeLimited = ir_SessionLapsTotal.getInt() == 32767 && ir_SessionTimeRemain.getDouble() < 48.0 * 3600.0;  // most robust way I could find to figure out whether this is a time-limited session (info in session string is often misleading)
-    const float    remainingLaps = sessionIsTimeLimited ? (0.5 + sessionTime / ir_estimateLaptime()) : (ir_SessionLapsRemainEx.getInt() != 32767 ? ir_SessionLapsRemainEx.getInt() : -1);
+    const float  remainingLaps = sessionIsTimeLimited
+        ? static_cast<float>(0.5 + sessionTime / ir_estimateLaptime())
+        : (ir_SessionLapsRemainEx.getInt() != 32767 ? static_cast<float>(ir_SessionLapsRemainEx.getInt()) : -1.0f);
 
     return remainingLaps;
 }

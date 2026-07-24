@@ -250,6 +250,7 @@
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include=".github\upgrades\scenarios\cppbuildtoolsupgrade\assessment.md" />
     <None Include=".gitignore" />
     <None Include="config.json" />
     <None Include="LICENSE" />

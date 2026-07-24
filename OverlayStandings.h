@@ -54,7 +54,7 @@ public:
             m_avgL5Times[i].reserve(5);
 
             for (int j = 0; j < 5; ++j) {
-                m_avgL5Times[i].emplace_back(0.0);
+                m_avgL5Times[i].emplace_back(0.0f);
             }
         }
 
@@ -400,7 +400,7 @@ protected:
 
         // Content
         
-        int carsToDraw = ((ybottom - 2 * yoff) / lineHeight) -1 ;
+        int carsToDraw = static_cast<int>(((ybottom - 2 * yoff) / lineHeight) - 1);
         int carsToSkip;
         if (carsToDraw >= carsInClass) {
             numTopDrivers = carsToDraw;
@@ -688,7 +688,7 @@ protected:
             if (irTotalLaps == 32767)
                 totalLaps = laps + remainingLaps + ir_CarIdxLapDistPct.getFloat(g_ir_session->driverCarIdx);
             else
-                totalLaps = irTotalLaps;
+                totalLaps = static_cast<float>(irTotalLaps);
 
             m_brush->SetColor(float4(1,1,1,0.4f));
             m_renderTarget->DrawLine( float2(0,ybottom),float2((float)m_width,ybottom),m_brush.Get() );
