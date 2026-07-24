@@ -101,20 +101,20 @@ protected:
         m_columns.add( (int)Columns::CAR_NUMBER, computeTextExtent( L"#999", m_dwriteFactory.Get(), m_textFormat.Get() ).x, fontSize/2 );
         m_columns.add( (int)Columns::NAME,       0, fontSize/2 );
 
+        if (g_cfg.getBool(m_name, "show_positions_gained", true))
+            m_columns.add( (int)Columns::POSITIONS_GAINED, computeTextExtent(L"▲99", m_dwriteFactory.Get(), m_textFormat.Get()).x, fontSize / 2);
+
         if (g_cfg.getBool(m_name, "show_pit", true))
-            m_columns.add( (int)Columns::PIT,        computeTextExtent( L"P.Age", m_dwriteFactory.Get(), m_textFormat.Get() ).x, fontSize/2 );
+            m_columns.add( (int)Columns::PIT,        computeTextExtent( L"Stint", m_dwriteFactory.Get(), m_textFormat.Get() ).x, fontSize/2 );
 
         if (g_cfg.getBool(m_name, "show_license", true))
-            m_columns.add( (int)Columns::LICENSE,    computeTextExtent( L"A 4.44", m_dwriteFactory.Get(), m_textFormatSmall.Get() ).x, fontSize/6 );
+            m_columns.add( (int)Columns::LICENSE,    computeTextExtent( L"A 4.44", m_dwriteFactory.Get(), m_textFormatSmall.Get() ).x + 10, fontSize/6 );
 
         if (g_cfg.getBool(m_name, "show_irating", true))
-            m_columns.add( (int)Columns::IRATING,    computeTextExtent( L" 9.9k ", m_dwriteFactory.Get(), m_textFormatSmall.Get() ).x, fontSize/6 );
+            m_columns.add( (int)Columns::IRATING,    computeTextExtent( L" 9.9k ", m_dwriteFactory.Get(), m_textFormatSmall.Get() ).x + 10, fontSize/6 );
 
         if (g_cfg.getBool(m_name, "show_car_brand", true))
             m_columns.add( (int)Columns::CAR_BRAND,  30, fontSize / 2);
-
-        if (g_cfg.getBool(m_name, "show_positions_gained", true))
-            m_columns.add( (int)Columns::POSITIONS_GAINED, computeTextExtent(L"▲99", m_dwriteFactory.Get(), m_textFormat.Get()).x, fontSize / 2);
 
         if (g_cfg.getBool(m_name, "show_gap", true))
             m_columns.add( (int)Columns::GAP,        computeTextExtent(L"999.9", m_dwriteFactory.Get(), m_textFormat.Get()).x, fontSize / 2 );
@@ -366,8 +366,13 @@ protected:
         swprintf( s, _countof(s), L"Driver" );
         m_text.render( m_renderTarget.Get(), s, m_textFormat.Get(), xoff+clm->textL, xoff+clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_LEADING );
 
+        if (clm = m_columns.get((int)Columns::POSITIONS_GAINED)) {
+            swprintf(s, _countof(s), L" ");
+            m_text.render(m_renderTarget.Get(), s, m_textFormat.Get(), xoff + clm->textL, xoff + clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_CENTER);
+        }
+
         if (clm = m_columns.get( (int)Columns::PIT )) {
-            swprintf( s, _countof(s), L"P.Age" );
+            swprintf( s, _countof(s), L"Stint" );
             m_text.render( m_renderTarget.Get(), s, m_textFormat.Get(), xoff+clm->textL, xoff+clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_CENTER );
         }
 
@@ -384,11 +389,6 @@ protected:
         if (clm = m_columns.get((int)Columns::CAR_BRAND)) {
             swprintf(s, _countof(s), L"  ");
             m_text.render(m_renderTarget.Get(), s, m_textFormat.Get(), xoff + clm->textL, xoff + clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_TRAILING);
-        }
-
-        if (clm = m_columns.get((int)Columns::POSITIONS_GAINED)) {
-            swprintf(s, _countof(s), L" ");
-            m_text.render(m_renderTarget.Get(), s, m_textFormat.Get(), xoff + clm->textL, xoff + clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_CENTER);
         }
 
         if (clm = m_columns.get((int)Columns::GAP)) {
@@ -528,7 +528,32 @@ protected:
                 m_text.render( m_renderTarget.Get(), s, m_textFormat.Get(), xoff+clm->textL, xoff+clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_LEADING );
             }
 
-            // Pit age
+            // Positions gained
+            if (clm = m_columns.get((int)Columns::POSITIONS_GAINED)) {
+                if (ci.positionsChanged == 0) {
+                    swprintf(s, _countof(s), L"-");
+                    m_text.render(m_renderTarget.Get(), s, m_textFormat.Get(), xoff + clm->textL, xoff + clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_TRAILING);
+                }
+                else {
+                    if (ci.positionsChanged > 0) {
+                        swprintf(s, _countof(s), L"▲");
+                        m_brush->SetColor(deltaPosCol);
+                    }
+                    else {
+                        swprintf(s, _countof(s), L"▼");
+                        m_brush->SetColor(deltaNegCol);
+                    }
+                    m_text.render(m_renderTarget.Get(), s, m_textFormat.Get(), xoff + clm->textL, xoff + clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_LEADING);
+
+                    m_brush->SetColor(textCol);
+                    swprintf(s, _countof(s), L"%d", abs(ci.positionsChanged));
+
+                    m_text.render(m_renderTarget.Get(), s, m_textFormat.Get(), xoff + clm->textL, xoff + clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_TRAILING);
+                }
+
+            }
+
+            // Pit age / Laps driven in current stint
             if( !ir_isPreStart() && (ci.pitAge>=0||ir_CarIdxOnPitRoad.getBool(ci.carIdx)) )
             {
                 if (clm = m_columns.get( (int)Columns::PIT )){
@@ -595,31 +620,6 @@ protected:
                     std::cout << "Error rendering car brand!" << std::endl;
                 }
             
-            }
-
-            // Positions gained
-            if (clm = m_columns.get((int)Columns::POSITIONS_GAINED)) {
-                if (ci.positionsChanged == 0) {
-                    swprintf(s, _countof(s), L"-");
-                    m_text.render(m_renderTarget.Get(), s, m_textFormat.Get(), xoff + clm->textL, xoff + clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_TRAILING);
-                }
-                else {
-                    if (ci.positionsChanged > 0) {
-                        swprintf(s, _countof(s), L"▲");
-                        m_brush->SetColor(deltaPosCol);
-                    }
-                    else {
-                        swprintf(s, _countof(s), L"▼");
-                        m_brush->SetColor(deltaNegCol);
-                    }
-                    m_text.render(m_renderTarget.Get(), s, m_textFormat.Get(), xoff + clm->textL, xoff + clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_LEADING);
-
-                    m_brush->SetColor(textCol);
-                    swprintf(s, _countof(s), L"%d", abs(ci.positionsChanged));
-
-                    m_text.render(m_renderTarget.Get(), s, m_textFormat.Get(), xoff + clm->textL, xoff + clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_TRAILING);
-                }
-                
             }
 
             // Gap
