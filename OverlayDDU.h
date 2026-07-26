@@ -42,10 +42,8 @@ class OverlayDDU : public Overlay
             : Overlay("OverlayDDU", d3dDevice)
         {}
 
-       #ifdef _DEBUG
-       virtual bool    canEnableWhileNotDriving() const { return true; }
+       virtual bool    canEnableWhileNotDriving() const { return g_cfg.getBool(m_name, "enabled_while_not_driving", true); }
        virtual bool    canEnableWhileDisconnected() const { return true; }
-       #endif
 
 
     protected:
