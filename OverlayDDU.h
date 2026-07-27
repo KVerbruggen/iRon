@@ -251,6 +251,7 @@ class OverlayDDU : public Overlay
 
             const int  carIdx   = g_ir_session->driverCarIdx;
             const int selfClassId = ir_getClassId(carIdx);
+            const bool livePosition = g_cfg.getBool(m_name, "live_position", false);
             const std::string displayUnitsOverride = g_cfg.getString(m_name, "display_units_override", "");
             const bool imperial = displayUnitsOverride == "imperial" ? true :
                                   displayUnitsOverride == "metric" ? false :
@@ -266,6 +267,27 @@ class OverlayDDU : public Overlay
                 if( ir_getPosition(i) == 1 ) {
                     p1carIdx = i;
                     break;
+                }
+            }
+
+            int liveClassPosition = 0;
+            if (livePosition && selfClassId > 0) {
+                const int selfLapCount = max(ir_CarIdxLap.getInt(carIdx), ir_CarIdxLapCompleted.getInt(carIdx));
+                const float selfLapDistPct = ir_CarIdxLapDistPct.getFloat(carIdx);
+
+                if (selfLapCount >= 0 && selfLapDistPct >= 0) {
+                    liveClassPosition = 1;
+                    for (int i = 0; i < IR_MAX_CARS; ++i) {
+                        const Car& otherCar = g_ir_session->cars[i];
+                        if (i == carIdx || ir_getClassId(i) != selfClassId || otherCar.isPaceCar || otherCar.isSpectator || otherCar.userName.empty())
+                            continue;
+
+                        const int otherLapCount = max(ir_CarIdxLap.getInt(i), ir_CarIdxLapCompleted.getInt(i));
+                        const float otherLapDistPct = ir_CarIdxLapDistPct.getFloat(i);
+                        if (otherLapCount > selfLapCount ||
+                            (otherLapCount == selfLapCount && otherLapDistPct > selfLapDistPct))
+                            liveClassPosition++;
+                    }
                 }
             }
 
@@ -405,7 +427,7 @@ class OverlayDDU : public Overlay
 
             // Position
             {
-                const int pos = ir_getPosition( g_ir_session->driverCarIdx );
+                const int pos = liveClassPosition > 0 ? liveClassPosition : ir_getPosition( carIdx );
                 if( pos )
                 {
                     swprintf( s, _countof(s), L"%d", pos );

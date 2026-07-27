@@ -151,6 +151,8 @@ protected:
             int     lapGap = 0;
             float   gap = 0;
             float   delta = 0;
+            int     officialPosition = 0;
+            int     livePosition = 0;
             int     position = 0;
             float   best = 0;
             float   last = 0;
@@ -174,9 +176,11 @@ protected:
         const int focusedCarIdx = cameraCarIdx >= 0 && cameraCarIdx < IR_MAX_CARS
             ? cameraCarIdx
             : g_ir_session->driverCarIdx;
-        int focusedPosition = ir_getPosition(focusedCarIdx);
         int focusedClass = ir_getClassId(focusedCarIdx);
         const int playerCarIdx = ir_PlayerCarIdx.getInt();
+        const bool livePositions = g_cfg.getBool(m_name, "live_positions", false);
+        const bool liveGaps = g_cfg.getBool(m_name, "live_gaps", false);
+        const bool liveOrder = g_cfg.getBool(m_name, "live_order", false);
         boolean hasPacecar = false;
 
         for( int i=0; i<IR_MAX_CARS; ++i )
@@ -191,7 +195,7 @@ protected:
             CarInfo ci;
             ci.carIdx       = i;
             ci.lapCount     = max( ir_CarIdxLap.getInt(i), ir_CarIdxLapCompleted.getInt(i) );
-            ci.position     = ir_getPosition(i);
+            ci.officialPosition = ir_getPosition(i);
             ci.pctAroundLap = ir_CarIdxLapDistPct.getFloat(i);
             ci.gap          = g_ir_session->sessionType!=SessionType::RACE ? 0 : -ir_CarIdxF2Time.getFloat(i);
             ci.last         = ir_CarIdxLastLapTime.getFloat(i);
@@ -253,6 +257,37 @@ protected:
             carInfo.push_back(ci);
         }
 
+        // Derive an on-track class order from telemetry that updates every tick.
+        // Official class positions are only updated by iRacing at timing lines.
+        vector<int> liveClassOrder;
+        liveClassOrder.reserve(carInfo.size());
+        for (int i = 0; i < (int)carInfo.size(); ++i) {
+            if (carInfo[i].classId == focusedClass)
+                liveClassOrder.push_back(i);
+        }
+        sort(liveClassOrder.begin(), liveClassOrder.end(),
+            [&carInfo](int a, int b) {
+                const CarInfo& ca = carInfo[a];
+                const CarInfo& cb = carInfo[b];
+                if (ca.lapCount != cb.lapCount)
+                    return ca.lapCount > cb.lapCount;
+                if (ca.pctAroundLap != cb.pctAroundLap)
+                    return ca.pctAroundLap > cb.pctAroundLap;
+                return ca.officialPosition < cb.officialPosition;
+            });
+        for (int i = 0; i < (int)liveClassOrder.size(); ++i)
+            carInfo[liveClassOrder[i]].livePosition = i + 1;
+        const int liveClassLeader = liveClassOrder.empty()
+            ? -1
+            : carInfo[liveClassOrder[0]].carIdx;
+
+        int focusedPosition = 0;
+        for (CarInfo& ci : carInfo) {
+            ci.position = livePositions && ci.livePosition > 0 ? ci.livePosition : ci.officialPosition;
+            if (ci.carIdx == focusedCarIdx)
+                focusedPosition = liveOrder && ci.livePosition > 0 ? ci.livePosition : ci.officialPosition;
+        }
+
         for (const auto& pair : bestLapClass)
         {
             if (pair.second.best > 0 && pair.second.carIdx >= 0)
@@ -264,11 +299,13 @@ protected:
         const int ciSelfIdx = playerCarIdx > 0 ? hasPacecar ? playerCarIdx - 1 : playerCarIdx : 0;
         const float selfLast5Laps = carInfo[ciSelfIdx].l5;
         
-        // Sort by position    # THIS INVALIDATES ciSelfIdx!
+        // Sort by selected table order. Position display is independently selectable.
         sort( carInfo.begin(), carInfo.end(),
-            []( const CarInfo& a, const CarInfo& b ) {
-                const int ap = a.position<=0 ? INT_MAX : a.position;
-                const int bp = b.position<=0 ? INT_MAX : b.position;
+            [liveOrder, focusedClass]( const CarInfo& a, const CarInfo& b ) {
+                const int aPosition = liveOrder && a.classId == focusedClass ? a.livePosition : a.officialPosition;
+                const int bPosition = liveOrder && b.classId == focusedClass ? b.livePosition : b.officialPosition;
+                const int ap = aPosition<=0 ? INT_MAX : aPosition;
+                const int bp = bPosition<=0 ? INT_MAX : bPosition;
                 return ap < bp;
             } );
 
@@ -276,6 +313,9 @@ protected:
         int classLeader = -1;
         int carsInClass = 0;
         float classLeaderGapToOverall = 0.0f;
+        if (liveGaps)
+            classLeader = liveClassLeader;
+
         for( int i=0; i<(int)carInfo.size(); ++i )
         {
             CarInfo&       ci       = carInfo[i];
@@ -284,7 +324,7 @@ protected:
 
             carsInClass++;
 
-            if (ci.position == 1) {
+            if (!liveGaps && ci.officialPosition == 1) {
                 classLeader = ci.carIdx;
                 classLeaderGapToOverall = ci.gap;
             }
@@ -292,7 +332,24 @@ protected:
             ci.lapGap = ir_getLapDeltaToLeader( ci.carIdx, classLeader);
             ci.delta = ir_getDeltaTime( ci.carIdx, g_ir_session->driverCarIdx );
 
-            if (g_ir_session->sessionType != SessionType::RACE) {
+            if (liveGaps && classLeader >= 0) {
+                const Car& leader = g_ir_session->cars[classLeader];
+                const float leaderEstTime = ir_CarIdxEstTime.getFloat(classLeader);
+                const float carEstTime = ir_CarIdxEstTime.getFloat(ci.carIdx);
+                const float classRatio = leader.carClassEstLapTime > 0
+                    ? g_ir_session->cars[ci.carIdx].carClassEstLapTime / leader.carClassEstLapTime
+                    : 1.0f;
+
+                if (leaderEstTime > 0 && carEstTime > 0 && classRatio > 0) {
+                    ci.gap = leaderEstTime - carEstTime / classRatio;
+                    const float leaderPctAroundLap = ir_CarIdxLapDistPct.getFloat(classLeader);
+                    if (fabsf(ci.pctAroundLap - leaderPctAroundLap) > 0.5f && leader.carClassEstLapTime > 0)
+                        ci.gap += ci.pctAroundLap > leaderPctAroundLap
+                            ? leader.carClassEstLapTime
+                            : -leader.carClassEstLapTime;
+                }
+            }
+            else if (g_ir_session->sessionType != SessionType::RACE) {
                 if(classLeader != -1) {
                     ci.gap -= classLeaderGapToOverall;
                     ci.gap = ci.gap < 0 ? 0 : ci.gap;
