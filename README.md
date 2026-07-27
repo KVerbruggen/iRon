@@ -2,9 +2,17 @@
 
 This project provides a few lightweight overlays for iRacing. Included are: a relative display with optional minimap, a dashboard with fuel calculator, a throttle/brake input graph, and a standings display.
 
+This version of the project has some modifications supporting the way I use iRacing.
+
+Personally it's mostly used as a streaming overlay, as these days most of the data is available directly in the iRacing HUD.
+
+# Note from the original creator ([lespalt/iRon](https://github.com/lespalt/iRon))
+
 I created iRon for my own personal use. As such, its feature set is limited to what I considered sensible in practice given the way I use iRacing. I don't currently plan to extend it further. That said, I'm making it available in the hope it might be useful to others in the iRacing community, either for direct use or as a starting point for other homebrew overlays.
 
 The project's code base aims to be small, easy to modify, and free of external dependencies.
+
+If you like this project enough to wonder whether you can contribute financially: first of all, thank you! I'm not looking for donations, but **please consider giving to Ukraine-related charities instead**.
 
 # Contents <!-- omit in toc -->
 
@@ -26,7 +34,7 @@ The project's code base aims to be small, easy to modify, and free of external d
 
 ## Where to Download
 
-The latest binary release can be found [here](https://github.com/lespalt/iRon/releases/latest).
+The latest binary release can be found [here](https://github.com/KVerbruggen/iRon/releases/latest).
 
 ## Overlays
 
@@ -48,13 +56,13 @@ The fuel calculator shows the estimated remaining laps, remaining amount of fuel
 
 ### *Inputs*
 
-Shows throttle/brake/steering in a moving graph. I find it useful to practice consistent braking.
+Shows throttle/brake/steering in a moving graph.
 
 ![inputs](inputs.png?raw=true)
 
 ### *Standings*
 
-Shows the standings of the entire field, including safety rating, iRating, and number of laps since the last pit stop ("pit age"). I usually leave this off by default and switch it on during cautions. Or glimpse at it pre-race to get a sense of the competition level.
+Shows the standings of the entire field, including safety rating, iRating, and number of laps since the last pit stop ("stint").
 
 Like the "Relative" overlay, this will highlight buddies in green (Dale Jr. in the example below).
 
@@ -70,7 +78,7 @@ No screenshot for this one, because all it is is a blank rectangle. Can be usefu
 
 The app does not require installation. Just copy the executable to a folder of your choice. Make sure the folder is not write protected, as iRon will attempt to save its configuration file in the working directory.
 
-To use it, simply run the executable. It doesn't matter whether you do this before or after launching iRacing. A console window will pop up, indicating that iRon is running. Once you're in the car in iRacing, the overlays should show up, and you can configure things to your liking. I recommend running iRacing in borderless window mode. Overlays *might* work in other modes as well, but I haven't tested it.
+To use it, simply run the executable. It doesn't matter whether you do this before or after launching iRacing. A console window will pop up, indicating that iRon is running. Once you're in the car in iRacing, the overlays should show up, and you can configure things to your liking. I recommend running iRacing in borderless window mode.
 
 ---
 
@@ -96,7 +104,7 @@ fuel_reserve_margin: Amount of fuel to reserve in the calculations
 
 ## Building from source
 
-This app is built with Visual Studio 2022 Community version. The project/solution files should work out of the box. Depending on your Visual Studio setup, you may need to install additional prerequisites (static libs) needed to build DirectX applications.
+This app is built with Visual Studio 2026 Community version. The project/solution files should work out of the box. Depending on your Visual Studio setup, you may need to install additional prerequisites (static libs) needed to build DirectX applications.
 
 ---
 
@@ -115,8 +123,3 @@ If you encounter a problem, please file a github issue and I'll do my best to ad
 If you'd like to see a specific feature added, feel free to file a github issue as well. If it's something small, I may actually get to it :-) No promises though, as unfortunately the time I can spend on this project is quite limited.
 
 ---
-
-## Donations
-
-If you like this project enough to wonder whether you can contribute financially: first of all, thank you! I'm not looking for donations, but **please consider giving to Ukraine-related charities instead**.
-
