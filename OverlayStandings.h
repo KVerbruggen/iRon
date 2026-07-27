@@ -692,10 +692,12 @@ protected:
         
         // Footer
         {
+            float airTemp = ir_AirTemp.getFloat();
             float trackTemp = ir_TrackTempCrew.getFloat();
             char  tempUnit  = 'C';
 
             if( imperial ) {
+                airTemp = celsiusToFahrenheit( airTemp );
                 trackTemp = celsiusToFahrenheit( trackTemp );
                 tempUnit  = 'F';
             }
@@ -723,6 +725,14 @@ protected:
                 int sof = g_ir_session->sof;
                 if (sof < 0) sof = 0;
                 str += std::format("SoF: {}", sof);
+                addSpaces = true;
+            }
+
+            if (g_cfg.getBool(m_name, "show_air_temp", true)) {
+                if (addSpaces) {
+                    str += "       ";
+                }
+                str += std::vformat("Air Temp: {:.1f}{:c}", std::make_format_args(airTemp, tempUnit));
                 addSpaces = true;
             }
 
