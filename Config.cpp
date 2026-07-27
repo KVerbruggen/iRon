@@ -107,6 +107,38 @@ bool Config::getBool( const std::string& component, const std::string& key, bool
     return value.get<bool>();
 }
 
+bool Config::getBool( const std::string& component, const std::string& group, const std::string& subgroup, const std::string& key, bool defaultVal )
+{
+    picojson::object& comp = getOrInsertComponent( component );
+    auto groupIt = comp.insert( std::make_pair(group, picojson::object()) );
+    picojson::object& groupObj = groupIt.first->second.get<picojson::object>();
+    auto subgroupIt = groupObj.insert( std::make_pair(subgroup, picojson::object()) );
+
+    if( !subgroupIt.second && subgroupIt.first->second.is<bool>() )
+    {
+        // Migrate the previous flat visibility state to both UI states.
+        const bool legacyValue = subgroupIt.first->second.get<bool>();
+        picojson::object uiStates;
+        uiStates["ui_visible"].set<bool>( legacyValue );
+        uiStates["ui_hidden"].set<bool>( legacyValue );
+        subgroupIt.first->second.set<picojson::object>( uiStates );
+    }
+
+    picojson::object& subgroupObj = subgroupIt.first->second.get<picojson::object>();
+    auto valueIt = subgroupObj.insert( std::make_pair(key, picojson::value()) );
+    if( valueIt.second && group == "visibility" && subgroup == "not_driving" )
+    {
+        // Preserve the pre-visibility non-driving setting during migration.
+        auto legacyIt = comp.find( "enabled_while_not_driving" );
+        if( legacyIt != comp.end() && legacyIt->second.is<bool>() )
+            defaultVal = legacyIt->second.get<bool>();
+    }
+    if( valueIt.second )
+        valueIt.first->second.set<bool>( defaultVal );
+
+    return valueIt.first->second.get<bool>();
+}
+
 int Config::getInt( const std::string& component, const std::string& key, int defaultVal )
 {
     bool existed = false;

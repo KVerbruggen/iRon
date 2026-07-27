@@ -119,19 +119,34 @@ static void registerHotkeys()
         RegisterHotKey(NULL, (int)Hotkey::Radar, mod, vk);
 }
 
+static void updateOverlayVisibility( vector<Overlay*> overlays, ConnectionStatus status )
+{
+    const bool uiHidden = ir_CamCameraState.getInt() & irsdk_UIHidden;
+
+    for( Overlay* o : overlays )
+    {
+        const string name = o->getName();
+        const bool showForVisibilityState = status == ConnectionStatus::DRIVING || status == ConnectionStatus::CONNECTED
+            ? g_cfg.getBool( name, "visibility", status == ConnectionStatus::DRIVING ? "driving" : "not_driving", uiHidden ? "ui_hidden" : "ui_visible", status == ConnectionStatus::DRIVING )
+            : o->canEnableWhileDisconnected();
+
+        const bool enabled = g_cfg.getBool(name,"enabled",true) &&
+            (status != ConnectionStatus::DISCONNECTED || o->canEnableWhileDisconnected());
+        o->enable( enabled );
+        o->setWindowVisible( enabled && showForVisibilityState );
+    }
+}
+
 static void handleConfigChange( vector<Overlay*> overlays, ConnectionStatus status )
 {
     registerHotkeys();
 
     ir_handleConfigChange();
 
+    updateOverlayVisibility( overlays, status );
+
     for( Overlay* o : overlays )
     {
-        o->enable( g_cfg.getBool(o->getName(),"enabled",true) && (
-            status == ConnectionStatus::DRIVING ||
-            status == ConnectionStatus::CONNECTED && g_cfg.getBool(o->getName(), "enabled_while_not_driving", false) ||
-            status == ConnectionStatus::DISCONNECTED && o->canEnableWhileDisconnected()
-            ));
         o->configChanged();
     }
 }
@@ -305,6 +320,7 @@ int main()
 
         // Refresh connection and session info
         status = ir_tick();
+        updateOverlayVisibility( overlays, status );
 #if defined(_DEBUG) or defined(DEBUG_OVERLAY_TIME)
         // Added in debug only for now
         loopTimeStart = std::chrono::high_resolution_clock::now();

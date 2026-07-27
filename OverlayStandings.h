@@ -170,8 +170,12 @@ protected:
 
         // Init array
         map<int, classBestLap> bestLapClass;
-        int selfPosition = ir_getPosition(g_ir_session->driverCarIdx);
-        int selfClass = ir_PlayerCarClass.getInt();
+        const int cameraCarIdx = ir_CamCarIdx.getInt();
+        const int focusedCarIdx = cameraCarIdx >= 0 && cameraCarIdx < IR_MAX_CARS
+            ? cameraCarIdx
+            : g_ir_session->driverCarIdx;
+        int focusedPosition = ir_getPosition(focusedCarIdx);
+        int focusedClass = ir_getClassId(focusedCarIdx);
         const int playerCarIdx = ir_PlayerCarIdx.getInt();
         boolean hasPacecar = false;
 
@@ -275,7 +279,7 @@ protected:
         for( int i=0; i<(int)carInfo.size(); ++i )
         {
             CarInfo&       ci       = carInfo[i];
-            if (ci.classId != selfClass)
+            if (ci.classId != focusedClass)
                 continue;
 
             carsInClass++;
@@ -331,7 +335,7 @@ protected:
         float nameWidth = computeTextExtent( L"Driver", m_dwriteFactory.Get(), m_textFormat.Get() ).x;
         for( const CarInfo& ci : carInfo )
         {
-            if( ci.classId == selfClass )
+            if( ci.classId == focusedClass )
                 nameWidth = max( nameWidth, computeTextExtent( toWide(g_ir_session->cars[ci.carIdx].teamName).c_str(), m_dwriteFactory.Get(), m_textFormat.Get() ).x );
         }
         nameWidth = min( nameWidth, maxDriverColumnWidth );
@@ -426,15 +430,15 @@ protected:
         }
         else {
             // cars to add ahead = total cars - position
-            numAheadDrivers += max((selfPosition - carsInClass + numBehindDrivers), 0);
-            numBehindDrivers -= min(max((selfPosition - carsInClass + numBehindDrivers), 0), 2);
+            numAheadDrivers += max((focusedPosition - carsInClass + numBehindDrivers), 0);
+            numBehindDrivers -= min(max((focusedPosition - carsInClass + numBehindDrivers), 0), 2);
             numTopDrivers += max(carsToDraw - (numTopDrivers+numAheadDrivers+numBehindDrivers+2), 0);
-            numBehindDrivers += max(carsToDraw - (selfPosition + numBehindDrivers), 0);
+            numBehindDrivers += max(carsToDraw - (focusedPosition + numBehindDrivers), 0);
 
-            if (selfPosition < numTopDrivers + numAheadDrivers) {
+            if (focusedPosition < numTopDrivers + numAheadDrivers) {
                 carsToSkip = 0;
             }
-            else if (selfPosition > carsInClass - numBehindDrivers) {
+            else if (focusedPosition > carsInClass - numBehindDrivers) {
                 carsToSkip = carsInClass - numTopDrivers - numBehindDrivers - numAheadDrivers - 1;
             }
             else carsToSkip = 0;
@@ -450,7 +454,7 @@ protected:
 
             y = 2*yoff + lineHeight/2 + (drawnCars+1)*lineHeight;
             
-            if (carInfo[i].classId != selfClass) {
+            if (carInfo[i].classId != focusedClass) {
                 continue;
             }
 
@@ -460,17 +464,17 @@ protected:
                 break;
 
             // Focus on the driver
-            if (selfPosition > 0 && selfClassDrivers > numTopDrivers) {
+            if (focusedPosition > 0 && selfClassDrivers > numTopDrivers) {
 
-                //if (selfClassDrivers < selfPosition - numAheadDrivers) {
-                if (selfClassDrivers > carsToSkip && selfClassDrivers < selfPosition - numAheadDrivers ) {
+                //if (selfClassDrivers < focusedPosition - numAheadDrivers) {
+                if (selfClassDrivers > carsToSkip && selfClassDrivers < focusedPosition - numAheadDrivers ) {
                     if (!skippedCars) {
                         skippedCars = true;
                         drawnCars++;
                     }
                     continue;
                 }
-                /*if (selfClassDrivers > selfPosition + numBehindDrivers) {
+                /*if (selfClassDrivers > focusedPosition + numBehindDrivers) {
                     continue;
                 }*/
             }
@@ -672,7 +676,7 @@ protected:
             if (clm = m_columns.get((int)Columns::L5))
             {
                 str.clear();
-                if (ci.l5 > 0 && selfPosition > 0) {
+                if (ci.l5 > 0 && focusedPosition > 0) {
                     str = formatLaptime(ci.l5);
                     if (ci.l5 >= selfLast5Laps)
                         m_brush->SetColor(deltaPosCol);

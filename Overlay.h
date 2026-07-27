@@ -50,6 +50,7 @@ class Overlay
 
         void            enable( bool on );
         bool            isEnabled() const;
+        void            setWindowVisible( bool visible );
 
         void            enableUiEdit( bool on );
         bool            isUiEditEnabled() const;

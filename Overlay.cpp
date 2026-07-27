@@ -238,6 +238,12 @@ bool Overlay::isEnabled() const
     return m_enabled;
 }
 
+void Overlay::setWindowVisible( bool visible )
+{
+    if( m_hwnd && !!IsWindowVisible(m_hwnd) != visible )
+        ShowWindow( m_hwnd, visible ? SW_SHOWNOACTIVATE : SW_HIDE );
+}
+
 void Overlay::enableUiEdit( bool on )
 {
     m_uiEditEnabled = on;

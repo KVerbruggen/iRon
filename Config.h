@@ -42,6 +42,7 @@ class Config
         bool                        hasChanged();
 
         bool                        getBool( const std::string& component, const std::string& key, bool defaultVal );
+        bool                        getBool( const std::string& component, const std::string& group, const std::string& subgroup, const std::string& key, bool defaultVal );
         int                         getInt( const std::string& component, const std::string& key, int defaultVal );
         float                       getFloat( const std::string& component, const std::string& key, float defaultVal );
         float4                      getFloat4( const std::string& component, const std::string& key, const float4& defaultVal );
