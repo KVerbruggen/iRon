@@ -117,6 +117,7 @@ class OverlayRelative : public Overlay
             const float focusedLapDistPct = ir_CarIdxLapDistPct.getFloat(focusedCarIdx);
             const float focusedEstLapTime = ir_CarIdxEstTime.getFloat(focusedCarIdx);
             const int focusedClass = ir_getClassId(focusedCarIdx);
+            const bool livePosition = g_cfg.getBool(m_name, "live_position", false);
             // Populate cars with the ones for which a relative/delta comparison is valid
             for( int i=0; i<IR_MAX_CARS; ++i )
             {
@@ -272,11 +273,12 @@ class OverlayRelative : public Overlay
                 const ColumnLayout::Column* clm = nullptr;
                 
                 // Position
-                if( ir_getPosition(ci.carIdx) > 0 )
+                const int position = ir_getPosition(ci.carIdx, livePosition);
+                if( position > 0 )
                 {
                     clm = m_columns.get( (int)Columns::POSITION );
                     m_brush->SetColor( col );
-                    swprintf( s, _countof(s), L"P%d", ir_getPosition(ci.carIdx) );
+                    swprintf( s, _countof(s), L"P%d", position );
                     m_textFormat->SetTextAlignment( DWRITE_TEXT_ALIGNMENT_TRAILING );
                     m_text.render( m_renderTarget.Get(), s, m_textFormat.Get(), xoff+clm->textL, xoff+clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_TRAILING );
                 }

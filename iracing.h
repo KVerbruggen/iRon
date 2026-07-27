@@ -428,8 +428,9 @@ bool ir_isPreStart();
 // Estimate time for a full lap.
 float ir_estimateLaptime();
 
-// Get the best known position, from the latest session we can find.
-int ir_getPosition( int carIdx );
+// Get a car's position within its class. Live positions are derived from current telemetry;
+// official positions come from iRacing's timing-line updates and session results.
+int ir_getPosition( int carIdx, bool livePosition = false );
 
 // Get gained positions.
 int ir_getPositionsChanged(int carIdx);

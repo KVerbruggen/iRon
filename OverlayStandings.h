@@ -195,7 +195,7 @@ protected:
             CarInfo ci;
             ci.carIdx       = i;
             ci.lapCount     = max( ir_CarIdxLap.getInt(i), ir_CarIdxLapCompleted.getInt(i) );
-            ci.officialPosition = ir_getPosition(i);
+            ci.officialPosition = ir_getPosition(i, false);
             ci.pctAroundLap = ir_CarIdxLapDistPct.getFloat(i);
             ci.gap          = g_ir_session->sessionType!=SessionType::RACE ? 0 : -ir_CarIdxF2Time.getFloat(i);
             ci.last         = ir_CarIdxLastLapTime.getFloat(i);
@@ -257,29 +257,12 @@ protected:
             carInfo.push_back(ci);
         }
 
-        // Derive an on-track class order from telemetry that updates every tick.
-        // Official class positions are only updated by iRacing at timing lines.
-        vector<int> liveClassOrder;
-        liveClassOrder.reserve(carInfo.size());
-        for (int i = 0; i < (int)carInfo.size(); ++i) {
-            if (carInfo[i].classId == focusedClass)
-                liveClassOrder.push_back(i);
+        int liveClassLeader = -1;
+        for (CarInfo& ci : carInfo) {
+            ci.livePosition = ir_getPosition(ci.carIdx, true);
+            if (ci.classId == focusedClass && ci.livePosition == 1)
+                liveClassLeader = ci.carIdx;
         }
-        sort(liveClassOrder.begin(), liveClassOrder.end(),
-            [&carInfo](int a, int b) {
-                const CarInfo& ca = carInfo[a];
-                const CarInfo& cb = carInfo[b];
-                if (ca.lapCount != cb.lapCount)
-                    return ca.lapCount > cb.lapCount;
-                if (ca.pctAroundLap != cb.pctAroundLap)
-                    return ca.pctAroundLap > cb.pctAroundLap;
-                return ca.officialPosition < cb.officialPosition;
-            });
-        for (int i = 0; i < (int)liveClassOrder.size(); ++i)
-            carInfo[liveClassOrder[i]].livePosition = i + 1;
-        const int liveClassLeader = liveClassOrder.empty()
-            ? -1
-            : carInfo[liveClassOrder[0]].carIdx;
 
         int focusedPosition = 0;
         for (CarInfo& ci : carInfo) {
@@ -813,7 +796,7 @@ protected:
                 if (addSpaces) {
                     str += "       ";
                 }
-                str += std::format("Laps: {}/{}{:.2f}", laps, (irTotalLaps == 32767 ? "~" : ""), totalLaps);
+                str += std::format("Laps: {}/{}{:.0f}", laps, (irTotalLaps == 32767 ? "~" : ""), totalLaps);
                 addSpaces = true;
             }
 

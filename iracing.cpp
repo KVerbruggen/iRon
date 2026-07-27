@@ -449,19 +449,19 @@ void updateSessionStringData(const char* sessionYaml, Session* ir_session_pointe
             case '\r':
                 c = ' ';
                 break;
-            case 'í':
+            case 'Ã­':
                 c = 'i';
                 break;
-            case 'ó':
+            case 'Ã³':
                 c = 'o';
                 break;
-            case 'ú':
+            case 'Ãº':
                 c = 'u';
                 break;
-            case 'á':
+            case 'Ã¡':
                 c = 'a';
                 break;
-            case 'é':
+            case 'Ã©':
                 c = 'e';
                 break;
             default:
@@ -745,7 +745,38 @@ float ir_estimateLaptime()
     return g_ir_session->cars[g_ir_session->driverCarIdx].carClassEstLapTime;
 }
 
-int ir_getPosition( int carIdx )
+static int ir_getLivePosition(int carIdx)
+{
+    if (carIdx < 0 || carIdx >= IR_MAX_CARS)
+        return 0;
+
+    const Car& car = g_ir_session->cars[carIdx];
+    const int classId = ir_getClassId(carIdx);
+    const int lapCount = std::max(ir_CarIdxLap.getInt(carIdx), ir_CarIdxLapCompleted.getInt(carIdx));
+    const float lapDistPct = ir_CarIdxLapDistPct.getFloat(carIdx);
+    if (classId <= 0 || car.isPaceCar || car.isSpectator || car.userName.empty() || lapCount < 0 || lapDistPct < 0)
+        return 0;
+
+    int position = 1;
+    for (int i = 0; i < IR_MAX_CARS; ++i)
+    {
+        if (i == carIdx || ir_getClassId(i) != classId)
+            continue;
+
+        const Car& otherCar = g_ir_session->cars[i];
+        const int otherLapCount = std::max(ir_CarIdxLap.getInt(i), ir_CarIdxLapCompleted.getInt(i));
+        const float otherLapDistPct = ir_CarIdxLapDistPct.getFloat(i);
+        if (otherCar.isPaceCar || otherCar.isSpectator || otherCar.userName.empty() || otherLapCount < 0 || otherLapDistPct < 0)
+            continue;
+
+        if (otherLapCount > lapCount || (otherLapCount == lapCount && otherLapDistPct > lapDistPct))
+            position++;
+    }
+
+    return position;
+}
+
+static int ir_getOfficialPosition(int carIdx)
 {
     // Try the different sources we have for position data, in descending order of importance
     int pos = ir_CarIdxClassPosition.getInt(carIdx);
@@ -765,6 +796,11 @@ int ir_getPosition( int carIdx )
         return pos;
 
     return 0;
+}
+
+int ir_getPosition(int carIdx, bool livePosition)
+{
+    return livePosition ? ir_getLivePosition(carIdx) : ir_getOfficialPosition(carIdx);
 }
 
 int ir_getPositionsChanged(int carIdx)

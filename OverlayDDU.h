@@ -270,27 +270,6 @@ class OverlayDDU : public Overlay
                 }
             }
 
-            int liveClassPosition = 0;
-            if (livePosition && selfClassId > 0) {
-                const int selfLapCount = max(ir_CarIdxLap.getInt(carIdx), ir_CarIdxLapCompleted.getInt(carIdx));
-                const float selfLapDistPct = ir_CarIdxLapDistPct.getFloat(carIdx);
-
-                if (selfLapCount >= 0 && selfLapDistPct >= 0) {
-                    liveClassPosition = 1;
-                    for (int i = 0; i < IR_MAX_CARS; ++i) {
-                        const Car& otherCar = g_ir_session->cars[i];
-                        if (i == carIdx || ir_getClassId(i) != selfClassId || otherCar.isPaceCar || otherCar.isSpectator || otherCar.userName.empty())
-                            continue;
-
-                        const int otherLapCount = max(ir_CarIdxLap.getInt(i), ir_CarIdxLapCompleted.getInt(i));
-                        const float otherLapDistPct = ir_CarIdxLapDistPct.getFloat(i);
-                        if (otherLapCount > selfLapCount ||
-                            (otherLapCount == selfLapCount && otherLapDistPct > selfLapDistPct))
-                            liveClassPosition++;
-                    }
-                }
-            }
-
             // General lap info
             const bool   sessionIsTimeLimited  = ir_SessionLapsTotal.getInt() == 32767 && ir_SessionTimeRemain.getDouble()<48.0*3600.0;  // most robust way I could find to figure out whether this is a time-limited session (info in session string is often misleading)
             const double remainingSessionTime  = sessionIsTimeLimited ? ir_SessionTimeRemain.getDouble() : -1;
@@ -427,7 +406,7 @@ class OverlayDDU : public Overlay
 
             // Position
             {
-                const int pos = liveClassPosition > 0 ? liveClassPosition : ir_getPosition( carIdx );
+                const int pos = ir_getPosition(carIdx, livePosition);
                 if( pos )
                 {
                     swprintf( s, _countof(s), L"%d", pos );
