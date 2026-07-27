@@ -120,11 +120,6 @@ void OverlayDebug::onUpdate()
     g_dbgLines.clear();
 }
 
-bool OverlayDebug::canEnableWhileNotDriving() const
-{
-    return true;
-}
-
 bool OverlayDebug::canEnableWhileDisconnected() const
 {
     return true;

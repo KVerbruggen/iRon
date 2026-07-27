@@ -754,11 +754,6 @@ protected:
         m_renderTarget->EndDraw();
     }
 
-    virtual bool canEnableWhileNotDriving() const
-    {
-        return true;
-    }
-
 protected:
 
     Microsoft::WRL::ComPtr<IDWriteTextFormat>  m_textFormat;

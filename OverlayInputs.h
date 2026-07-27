@@ -245,12 +245,6 @@ class OverlayInputs : public Overlay
             m_renderTarget->EndDraw();
         }
 
-        virtual bool canEnableWhileNotDriving() const
-        {
-            // Show only while watching a replay
-            return g_ir_session->isReplay;
-        }
-
     protected:
 
         std::vector<float2> m_throttleVtx;

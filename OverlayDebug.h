@@ -39,7 +39,6 @@ public:
     virtual void onEnable();
     virtual void onConfigChanged();
     virtual void onUpdate();
-    virtual bool canEnableWhileNotDriving() const;
     virtual bool canEnableWhileDisconnected() const;
 
 protected:

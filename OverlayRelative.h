@@ -76,7 +76,7 @@ class OverlayRelative : public Overlay
             m_columns.add( (int)Columns::CAR_NUMBER, computeTextExtent( L"#999", m_dwriteFactory.Get(), m_textFormat.Get() ).x, fontSize/2 );
             m_columns.add( (int)Columns::NAME,       0, fontSize/2 );
 
-            if( g_cfg.getBool(m_name,"show_pit_age",true) )
+            if( g_cfg.getBool(m_name,"show_stint_length",true) )
                 m_columns.add( (int)Columns::PIT,           computeTextExtent( L"999", m_dwriteFactory.Get(), m_textFormatSmall.Get() ).x, fontSize/4 );
             if( g_cfg.getBool(m_name,"show_license",true) && !g_cfg.getBool(m_name,"show_sr",false) )
                 m_columns.add( (int)Columns::LICENSE,       computeTextExtent( L" A ", m_dwriteFactory.Get(), m_textFormatSmall.Get() ).x*1.6f, fontSize/10 );
@@ -101,7 +101,7 @@ class OverlayRelative : public Overlay
                 float   lapDistPct = 0;
                 int     wrappedSum = 0;
                 int     lapDelta = 0;
-                int     pitAge = 0;
+                int     stintLength = 0;
                 float   last = 0;
                 bool    overallLeader = false;
                 bool    classLeader = false;
@@ -173,7 +173,7 @@ class OverlayRelative : public Overlay
                     ci.lapDelta = lapDelta;
                     ci.lapDistPct = ir_CarIdxLapDistPct.getFloat(i);
                     ci.wrappedSum = wrappedSum;
-                    ci.pitAge = ir_CarIdxLap.getInt(i) - car.lastLapInPits;
+                    ci.stintLength = ir_CarIdxLap.getInt(i) - car.lastLapInPits;
                     ci.last = ir_CarIdxLastLapTime.getFloat(i);
                     ci.classLeader = (ir_CarIdxClass.getInt(i) == classSelf) && (ir_CarIdxClassPosition.getInt(i) == 1);
                     ci.overallLeader = ir_CarIdxPosition.getInt(i) == 1;
@@ -301,8 +301,8 @@ class OverlayRelative : public Overlay
                     m_text.render( m_renderTarget.Get(), s, m_textFormat.Get(), xoff+clm->textL, xoff+clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_LEADING );
                 }
 
-                // Pit age
-                if( (clm = m_columns.get((int)Columns::PIT)) && !ir_isPreStart() && (ci.pitAge>=0||ir_CarIdxOnPitRoad.getBool(ci.carIdx)) )
+                // Current stint length
+                if( (clm = m_columns.get((int)Columns::PIT)) && !ir_isPreStart() && (ci.stintLength>=0||ir_CarIdxOnPitRoad.getBool(ci.carIdx)) )
                 {
                     r = { xoff+clm->textL, y-lineHeight/2+2, xoff+clm->textR, y+lineHeight/2-2 };
                     m_brush->SetColor( pitCol );
@@ -313,7 +313,7 @@ class OverlayRelative : public Overlay
                         m_brush->SetColor( float4(0,0,0,1) );
                     }
                     else {
-                        swprintf( s, _countof(s), L"%d", ci.pitAge );
+                        swprintf( s, _countof(s), L"%d", ci.stintLength );
                         m_renderTarget->DrawRectangle( &r, m_brush.Get() );
                     }
                     m_text.render( m_renderTarget.Get(), s, m_textFormatSmall.Get(), xoff+clm->textL, xoff+clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_CENTER );
@@ -401,7 +401,7 @@ class OverlayRelative : public Overlay
 
                 m_brush->SetColor(float4(1, 1, 1, 0.4f));
                 m_renderTarget->DrawLine(float2(0, ybottom), float2((float)m_width, ybottom), m_brush.Get());
-                swprintf(s, _countof(s), L"SoF: %d      Track Temp: %.1f°%c      Session end: %d:%02d:%02d       Laps: %d/%d", ir_session->sof, trackTemp, tempUnit, hours, mins, secs, laps, remainingLaps);
+                swprintf(s, _countof(s), L"SoF: %d      Track Temp: %.1fÂ°%c      Session end: %d:%02d:%02d       Laps: %d/%d", ir_session->sof, trackTemp, tempUnit, hours, mins, secs, laps, remainingLaps);
                 y = m_height - (m_height - ybottom) / 2;
                 m_brush->SetColor(headerCol);
                 m_text.render(m_renderTarget.Get(), s, m_textFormat.Get(), xoff, (float)m_width - 2 * xoff, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_CENTER);
@@ -480,12 +480,6 @@ class OverlayRelative : public Overlay
                 }
             }
             m_renderTarget->EndDraw();
-        }
-
-
-        virtual bool canEnableWhileNotDriving() const
-        {
-            return g_cfg.getBool(m_name, "enabled_while_not_driving", false);
         }
 
     protected:

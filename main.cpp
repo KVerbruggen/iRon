@@ -129,7 +129,7 @@ static void handleConfigChange( vector<Overlay*> overlays, ConnectionStatus stat
     {
         o->enable( g_cfg.getBool(o->getName(),"enabled",true) && (
             status == ConnectionStatus::DRIVING ||
-            status == ConnectionStatus::CONNECTED && o->canEnableWhileNotDriving() ||
+            status == ConnectionStatus::CONNECTED && g_cfg.getBool(o->getName(), "enabled_while_not_driving", false) ||
             status == ConnectionStatus::DISCONNECTED && o->canEnableWhileDisconnected()
             ));
         o->configChanged();
@@ -316,7 +316,7 @@ int main()
             else
                 printf("iRacing connected (%s)\n", ConnectionStatusStr[(int)status]);
 
-            // Enable user-selected overlays, but only if we're driving
+            // Enable user-selected overlays permitted for the current connection state.
             handleConfigChange( overlays, status );
 
 #if defined(_DEBUG) and defined(DEBUG_DUMP_VARS)
