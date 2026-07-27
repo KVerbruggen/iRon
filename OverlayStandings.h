@@ -181,6 +181,7 @@ protected:
         const bool livePositions = g_cfg.getBool(m_name, "live_positions", false);
         const bool liveGaps = g_cfg.getBool(m_name, "live_gaps", false);
         const bool liveOrder = g_cfg.getBool(m_name, "live_order", false);
+        const bool needsLivePositions = livePositions || liveGaps || liveOrder;
         boolean hasPacecar = false;
 
         for( int i=0; i<IR_MAX_CARS; ++i )
@@ -258,10 +259,12 @@ protected:
         }
 
         int liveClassLeader = -1;
-        for (CarInfo& ci : carInfo) {
-            ci.livePosition = ir_getPosition(ci.carIdx, true);
-            if (ci.classId == focusedClass && ci.livePosition == 1)
-                liveClassLeader = ci.carIdx;
+        if (needsLivePositions) {
+            for (CarInfo& ci : carInfo) {
+                ci.livePosition = ir_getPosition(ci.carIdx, true);
+                if (ci.classId == focusedClass && ci.livePosition == 1)
+                    liveClassLeader = ci.carIdx;
+            }
         }
 
         int focusedPosition = 0;
