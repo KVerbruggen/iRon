@@ -108,11 +108,15 @@ class OverlayRelative : public Overlay
             };
             std::vector<CarInfo> relatives;
             relatives.reserve( IR_MAX_CARS );
-            const float ownClassEstLaptime = g_ir_session->cars[g_ir_session->driverCarIdx].carClassEstLapTime;
-            const int lapcountSelf = ir_Lap.getInt();
-            const float selfLapDistPct = ir_LapDistPct.getFloat();
-            const float SelfEstLapTime = ir_CarIdxEstTime.getFloat(g_ir_session->driverCarIdx);
-            const int classSelf = ir_PlayerCarClass.getInt();
+            const int cameraCarIdx = ir_CamCarIdx.getInt();
+            const int focusedCarIdx = cameraCarIdx >= 0 && cameraCarIdx < IR_MAX_CARS
+                ? cameraCarIdx
+                : g_ir_session->driverCarIdx;
+            const float focusedClassEstLaptime = g_ir_session->cars[focusedCarIdx].carClassEstLapTime;
+            const int focusedLapCount = ir_CarIdxLap.getInt(focusedCarIdx);
+            const float focusedLapDistPct = ir_CarIdxLapDistPct.getFloat(focusedCarIdx);
+            const float focusedEstLapTime = ir_CarIdxEstTime.getFloat(focusedCarIdx);
+            const int focusedClass = ir_getClassId(focusedCarIdx);
             // Populate cars with the ones for which a relative/delta comparison is valid
             for( int i=0; i<IR_MAX_CARS; ++i )
             {
@@ -129,25 +133,25 @@ class OverlayRelative : public Overlay
                     // If the other car is up to half a lap in front, we consider the delta 'ahead', otherwise 'behind'.
 
                     float delta = 0;
-                    int   lapDelta = lapcountCar - lapcountSelf;
+                    int   lapDelta = lapcountCar - focusedLapCount;
 
-                    const float LClassRatio = car.carClassEstLapTime / ownClassEstLaptime;
+                    const float LClassRatio = car.carClassEstLapTime / focusedClassEstLaptime;
                     const float CarEstLapTime = ir_CarIdxEstTime.getFloat(i) / LClassRatio;
                     const float carLapDistPct = ir_CarIdxLapDistPct.getFloat(i);
 
                     // Does the delta between us and the other car span across the start/finish line?
-                    const bool wrap = fabsf(carLapDistPct - selfLapDistPct) > 0.5f;
+                    const bool wrap = fabsf(carLapDistPct - focusedLapDistPct) > 0.5f;
                     int wrappedSum = 0;
 
                     if( wrap )
                     {
-                        if (selfLapDistPct > carLapDistPct) {
-                            delta = (CarEstLapTime - SelfEstLapTime) + ownClassEstLaptime;
+                        if (focusedLapDistPct > carLapDistPct) {
+                            delta = (CarEstLapTime - focusedEstLapTime) + focusedClassEstLaptime;
                             lapDelta += -1;
                             wrappedSum = 1;
                         }
                         else {
-                            delta = (CarEstLapTime - SelfEstLapTime) - ownClassEstLaptime;
+                            delta = (CarEstLapTime - focusedEstLapTime) - focusedClassEstLaptime;
                             lapDelta += 1;
                             wrappedSum = -1;
                         }
@@ -155,7 +159,7 @@ class OverlayRelative : public Overlay
                     }
                     else
                     {
-                        delta = CarEstLapTime - SelfEstLapTime;
+                        delta = CarEstLapTime - focusedEstLapTime;
                     }
 
                     // Assume no lap delta when not in a race, because we don't want to show drivers as lapped/lapping there.
@@ -175,7 +179,7 @@ class OverlayRelative : public Overlay
                     ci.wrappedSum = wrappedSum;
                     ci.stintLength = ir_CarIdxLap.getInt(i) - car.lastLapInPits;
                     ci.last = ir_CarIdxLastLapTime.getFloat(i);
-                    ci.classLeader = (ir_CarIdxClass.getInt(i) == classSelf) && (ir_CarIdxClassPosition.getInt(i) == 1);
+                    ci.classLeader = (ir_CarIdxClass.getInt(i) == focusedClass) && (ir_CarIdxClassPosition.getInt(i) == 1);
                     ci.overallLeader = ir_CarIdxPosition.getInt(i) == 1;
                     relatives.push_back( ci );
                 }
@@ -185,21 +189,21 @@ class OverlayRelative : public Overlay
             std::sort( relatives.begin(), relatives.end(), 
                 []( const CarInfo& a, const CarInfo&b ) {return a.lapDistPct + a.wrappedSum > b.lapDistPct + b.wrappedSum ;} );
 
-            // Locate our driver's index in the new array
-            int selfCarInfoIdx = -1;
+            // Locate the focused driver's index in the new array
+            int focusedCarInfoIdx = -1;
             for( int i=0; i<(int)relatives.size(); ++i )
             {
-                if( relatives[i].carIdx == g_ir_session->driverCarIdx ) {
-                    selfCarInfoIdx = i;
+                if( relatives[i].carIdx == focusedCarIdx ) {
+                    focusedCarInfoIdx = i;
                     break;
                 }
             }
 
-            // Something's wrong if we didn't find our driver. Bail.
-            if( selfCarInfoIdx < 0 )
+            // Something's wrong if we didn't find the focused driver. Bail.
+            if( focusedCarInfoIdx < 0 )
                 return;
 
-            // Display such that our driver is in the vertical center of the area where we're listing cars
+            // Display such that the focused driver is in the vertical center of the area where we're listing cars
 
             const float  fontSize           = g_cfg.getFloat( m_name, "font_size", DefaultFontSize );
             const float  lineSpacing        = g_cfg.getFloat( m_name, "line_spacing", 6 );
@@ -232,7 +236,7 @@ class OverlayRelative : public Overlay
             m_columns.layout( (float)m_width - 20 );
 
             m_renderTarget->BeginDraw();
-            for( int cnt=0, i=selfCarInfoIdx-entriesAbove; i<(int)relatives.size() && y<=listingAreaBot-lineHeight/2; ++i, y+=lineHeight, ++cnt )
+            for( int cnt=0, i=focusedCarInfoIdx-entriesAbove; i<(int)relatives.size() && y<=listingAreaBot-lineHeight/2; ++i, y+=lineHeight, ++cnt )
             {
                 // Alternating line backgrounds
                 if( cnt & 1 && alternateLineBgCol.a > 0 )
@@ -256,7 +260,7 @@ class OverlayRelative : public Overlay
                 if( ci.lapDelta < 0 )
                     col = lapBehindCol;
 
-                if( car.isSelf )
+                if( ci.carIdx == focusedCarIdx )
                     col = selfCol;
                 else if( ir_CarIdxOnPitRoad.getBool(ci.carIdx) )
                     col.a *= 0.5f;
@@ -287,7 +291,7 @@ class OverlayRelative : public Overlay
                     rr.radiusY = 3;
                     float4 color = car.classCol;
                     color.a = licenseBgAlpha;
-                    m_brush->SetColor( car.isSelf ? color : (car.isBuddy ? buddyCol : (car.isFlagged?flaggedCol: color)) );
+                    m_brush->SetColor( ci.carIdx == focusedCarIdx ? color : (car.isBuddy ? buddyCol : (car.isFlagged?flaggedCol: color)) );
                     m_renderTarget->FillRoundedRectangle( &rr, m_brush.Get() );
                     m_brush->SetColor( carNumberTextCol );
                     m_text.render( m_renderTarget.Get(), s, m_textFormat.Get(), xoff+clm->textL, xoff+clm->textR, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_CENTER );
@@ -449,12 +453,12 @@ class OverlayRelative : public Overlay
                             continue;
                         if( phase == 4 && !car.isPaceCar )
                             continue;
-                        if( phase == 5 && !car.isSelf )
+                        if( phase == 5 && ci.carIdx != focusedCarIdx )
                             continue;
                         
                         float e = ir_CarIdxLapDistPct.getFloat(ci.carIdx);
 
-                        const float eself = ir_CarIdxLapDistPct.getFloat(g_ir_session->driverCarIdx);
+                        const float eself = focusedLapDistPct;
 
                         if( minimapIsRelative )
                         {
@@ -467,12 +471,12 @@ class OverlayRelative : public Overlay
                         e = e * w + x;
 
                         float4 col = baseCol;
-                        if( !car.isSelf && ir_CarIdxOnPitRoad.getBool(ci.carIdx) )
+                        if( ci.carIdx != focusedCarIdx && ir_CarIdxOnPitRoad.getBool(ci.carIdx) )
                             col.a *= 0.5f;
 
                         const float dx = 2;
                         // TODO: Config value for the height of these car markers?
-                        const float dy = (car.isSelf || car.isPaceCar || ci.classLeader || ci.overallLeader ? 4.0f : 0.0f);
+                        const float dy = (ci.carIdx == focusedCarIdx || car.isPaceCar || ci.classLeader || ci.overallLeader ? 4.0f : 0.0f);
                         r = {e-dx, y+2-dy, e+dx, y+h-2+dy};
                         m_brush->SetColor( col );
                         m_renderTarget->FillRectangle( &r, m_brush.Get() );
